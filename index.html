@@ -122,7 +122,7 @@
 
     <script id="splat-glsl" type="x-shader/x-fragment">
         const float PHI = (sqrt(5.) - 1.)/2.;
-        
+
         void mainSplat(inout Gsplat gs) {
             int i = gs.index;
             int n = numSplats;
@@ -135,6 +135,9 @@
             gs.rgba = vec4(0.5 + 0.5*vec3(z, 0, -z), 1.0);
             gs.scales = vec3(0.5)/sqrt(float(n));
             gs.quaternion = vec4(0);
+
+            gs.scales *= 1.0 + 0.5*cos(
+                PI*4.0*(z*0.5 + 0.5 + time*0.2));
         }
     </script>
 
