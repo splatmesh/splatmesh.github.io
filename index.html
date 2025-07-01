@@ -27,6 +27,11 @@
             top: 0;
         }
 
+        .cm-editor {
+            width: 35em;
+            max-height: 50vh;
+        }
+
         #topbar {
             color: #ccc;
             background: #444;
@@ -116,7 +121,7 @@
     </script>
 
     <script id="splat-glsl" type="x-shader/x-fragment">
-        const float PHI = (sqrt(5.) - 1.)/2.;   // 0.618
+        const float PHI = (sqrt(5.) - 1.)/2.;
         
         void mainSplat(inout Gsplat gs) {
             int i = gs.index;
@@ -127,7 +132,7 @@
             float t = fract(float(i)*PHI)*PI*2.0;
 
             gs.center = vec3(r*cos(t), r*sin(t), z);
-            gs.rgba = vec4(0.5 + 0.5*z, 0.5, 0.5 - 0.5*z, 1.0);
+            gs.rgba = vec4(0.5 + 0.5*vec3(z, 0, -z), 1.0);
             gs.scales = vec3(0.5)/sqrt(float(n));
             gs.quaternion = vec4(0);
         }
@@ -248,7 +253,7 @@
         }
 
         editor.dom.addEventListener('focusout', (e) => {
-            console.log('Updating SplatMesh GLSL...', splatMesh.numSplats);
+            console.log('Updating SplatMesh GLSL...');
             splatMesh.updateGenerator();
             $('#share').href = '#' + encodeURIComponent(getEditorText());
         });
