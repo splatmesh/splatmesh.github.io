@@ -1,0 +1,127 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background: #000;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+canvas {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+#codemirror {
+    position: fixed;
+    right: 0;
+    top: 0;
+}
+
+#codemirror.collapsed>code {
+    display: none;
+}
+
+.cm-editor {
+    width: 30rem;
+    max-height: 50vh;
+}
+
+#show,
+#hide {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+#codemirror:not(.collapsed) #show {
+    display: none;
+}
+
+#codemirror.collapsed #hide {
+    display: none;
+}
+
+#topbar {
+    color: #ccc;
+    background: #444;
+    font-size: 0.75rem;
+    padding: 0.5em;
+    display: flex;
+    gap: 1em;
+    align-items: center;
+}
+
+#topbar a {
+    color: inherit;
+}
+
+#share[href=""] {
+    cursor: inherit;
+    text-decoration: none;
+    opacity: 0.5;
+    user-select: none;
+}
+
+#github {
+    width: 2em;
+    height: 2em;
+    filter: invert(1.0);
+}
+
+#webgl_error {
+    background: #222;
+    overflow-x: scroll;
+    width: 30rem;
+}
+
+#webgl_error div {
+    color: #e06c75;
+    word-wrap: unset;
+    white-space: pre;
+    line-height: 1.4;
+    font-size: 0.75rem;
+    font-family: monospace;
+    padding: 0.5em;
+}
+
+#webgl_error {
+    display: none;
+}
+
+#stats {
+    position: fixed;
+    top: 0;
+    right: 0;
+}
+
+#spark {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    padding: 1em;
+    color: #8888;
+    font-size: 0.75em;
+}
+
+#spark a {
+    color: inherit;
+}
+
+#status {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    margin: 1em;
+    opacity: 0.5;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    color: #888;
+    font-size: 0.75em;
+}
+
+#status input {
+    cursor: pointer;
+}
