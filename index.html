@@ -1,0 +1,265 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>SplatMesh</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        canvas {
+            position: fixed;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        #codemirror {
+            position: fixed;
+            right: 0;
+            top: 0;
+        }
+
+        #topbar {
+            color: #ccc;
+            background: #444;
+            font-size: 0.75rem;
+            padding: 1em;
+            text-align: right;
+        }
+
+        #topbar a {
+            color: inherit;
+        }
+
+        #share[href=""] {
+            cursor: inherit;
+        }
+
+        #stats {
+            position: fixed;
+            top: 0;
+            right: 0;
+        }
+
+        #spark {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            padding: 1em;
+            color: #8888;
+            font-size: 0.75em;
+        }
+
+        #spark a {
+            color: inherit;
+        }
+
+        #status {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            margin: 1em;
+            opacity: 0.5;
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+            color: #888;
+            font-size: 0.75em;
+        }
+
+        #status input {
+            cursor: pointer;
+        }
+
+        ;
+    </style>
+</head>
+
+<body>
+    <canvas id="webgl"></canvas>
+
+    <div id="codemirror">
+        <code></code>
+        <div id="topbar"><a id="share" href="">Share</a></div>
+    </div>
+
+    <span id="spark">Powered by <a href="https://sparkjs.dev">Spark</a></span>
+
+    <div id="status">
+        <span>Splats:</span>
+        <span id="numsplats">2048</span>
+        <input id="logsplats" type="range" min="0" max="11" step="1" value="0" />
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.4/spark.module.js",
+            "three": "https://unpkg.com/three@0.178.0/build/three.module.min.js",
+            "three/addons/": "https://unpkg.com/three@0.178.0/examples/jsm/",
+            "codemirror": "/libs/codemirror/codemirror.js",
+            "@codemirror/view": "/libs/codemirror/@codemirror_view.js",
+            "@codemirror/language": "/libs/codemirror/chunk-MED5PSS5.js",
+            "@lezer/highlight": "/libs/codemirror/chunk-MED5PSS5.js",
+            "codemirror-lang-glsl": "/libs/codemirror/codemirror-lang-glsl.js",
+            "codemirror-theme-one-dark": "/libs/codemirror/codemirror-theme-one-dark.js"
+        }
+    }
+    </script>
+
+    <script id="splat-glsl" type="x-shader/x-fragment">
+        const float PHI = (sqrt(5.) - 1.)/2.;   // 0.618
+        
+        void mainSplat(inout Gsplat gs) {
+            int i = gs.index;
+            int n = numSplats;
+
+            float z = float(i)/float(n - 1)*2. - 1.;
+            float r = sqrt(1. - z*z);
+            float t = fract(float(i)*PHI)*PI*2.0;
+
+            gs.center = vec3(r*cos(t), r*sin(t), z);
+            gs.rgba = vec4(0.5 + 0.5*z, 0.5, 0.5 - 0.5*z, 1.0);
+            gs.scales = vec3(0.5)/sqrt(float(n));
+            gs.quaternion = vec4(0);
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from "three";
+        import { SparkRenderer, SplatMesh, PackedSplats, dyno } from "@sparkjsdev/spark";
+        import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+        import Stats from 'three/addons/libs/stats.module.js';
+
+        const $ = (s) => document.querySelector(s);
+        const canvas = $('canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.001, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, preserveDrawingBuffer: true });
+
+        let splatMesh = null;
+
+        const animateT = dyno.dynoFloat(0);
+        const stats = new Stats();
+        stats.domElement.id = 'stats';
+        document.body.appendChild(stats.domElement);
+
+        const controls = new OrbitControls(camera, canvas);
+        controls.minDistance = 0;
+        controls.maxDistance = 10;
+        camera.position.set(0, 0, 2.5);
+
+        resizeCanvas();
+
+        renderer.setAnimationLoop((time) => {
+            if (!controls.enabled)
+                return;
+
+            animateT.value = time / 1000;
+            splatMesh.updateVersion();
+            resizeCanvas();
+            controls.update();
+            stats.update();
+            renderer.render(scene, camera);
+        });
+
+        canvas.addEventListener('dblclick', (e) => {
+            if (e.target == canvas)
+                controls.enabled = !controls.enabled;
+        });
+
+        window.addEventListener('resize', () => {
+            setTimeout(resizeCanvas, 150);
+        });
+
+        function resizeCanvas() {
+            const w = window.innerWidth, h = window.innerHeight;
+
+            if (w != canvas.width || h != canvas.height) {
+                renderer.setSize(w, h, false);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            }
+        }
+
+        import { basicSetup } from "codemirror";
+        import { EditorView } from "@codemirror/view";
+        import * as langGLSL from "codemirror-lang-glsl";
+        import * as darkTheme from "codemirror-theme-one-dark";
+
+        const editor = new EditorView({
+            parent: $('#codemirror code'),
+            doc: decodeURIComponent(location.hash.replace(/^#/, '')) ||
+                dyno.unindent($('#splat-glsl').textContent),
+            extensions: [
+                basicSetup,
+                langGLSL.glsl(),
+                darkTheme.oneDark,
+            ],
+        });
+
+        const getEditorText = () =>
+            dyno.unindent(editor.state.doc.toString());
+
+        const objectModifier = dyno.dynoBlock(
+            { gsplat: dyno.Gsplat },
+            { gsplat: dyno.Gsplat },
+            ({ gsplat }) => {
+                const d = new dyno.Dyno({
+                    inTypes: { gsplat: dyno.Gsplat, time: "float" },
+                    outTypes: { gsplat: dyno.Gsplat },
+                    globals: () => [
+                        'float time = 0.;',
+                        'int numSplats = 0;',
+                        getEditorText(),
+                    ],
+                    statements: ({ inputs, outputs }) => dyno.unindentLines(`
+                        time = ${inputs.time};
+                        numSplats = ${splatMesh.numSplats};
+                        ${outputs.gsplat} = ${inputs.gsplat};
+                        mainSplat(${outputs.gsplat});
+                    `),
+                });
+                gsplat = d.apply({ gsplat, time: animateT }).gsplat;
+                return { gsplat };
+            },
+        );
+
+        initSplatMesh(2048);
+
+        // Spark needs numSplats to be a multiple of 2048.
+        function initSplatMesh(numSplats) {
+            scene.remove(splatMesh);
+            const packedArray = new Uint32Array(numSplats * 4);
+            packedArray.fill(0x01010101); // Spark drops splats of zero size
+            const packedSplats = new PackedSplats({ packedArray });
+            splatMesh = new SplatMesh({ packedSplats });
+            splatMesh.objectModifier = objectModifier;
+            scene.add(splatMesh);
+            console.log('Created SplatMesh:', splatMesh.numSplats, 'splats');
+        }
+
+        editor.dom.addEventListener('focusout', (e) => {
+            console.log('Updating SplatMesh GLSL...', splatMesh.numSplats);
+            splatMesh.updateGenerator();
+            $('#share').href = '#' + encodeURIComponent(getEditorText());
+        });
+
+        $('#logsplats').value = 0;
+        $('#logsplats').onchange = () => {
+            let n = 2048 << $('#logsplats').value;
+            $('#numsplats').textContent = n;
+            initSplatMesh(n);
+        };
+    </script>
+</body>
+
+</html>
