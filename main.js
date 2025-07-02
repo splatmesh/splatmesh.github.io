@@ -91,7 +91,9 @@ initSplatMesh(2048);
 function initSplatMesh(numSplats) {
     scene.remove(splatMesh);
     const packedArray = new Uint32Array(numSplats * 4);
-    packedArray.fill(0x01010101); // Spark drops splats of zero size
+    // Spark drops splats of zero size
+    // Alternative: gs.flags |= 1u;
+    packedArray.fill(0x01010101);
     const packedSplats = new PackedSplats({ packedArray });
     splatMesh = new SplatMesh({ packedSplats });
     splatMesh.objectModifier = objectModifier;

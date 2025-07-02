@@ -69,13 +69,14 @@
             float r = sqrt(1. - z*z);
             float t = fract(float(i)*PHI)*PI*2.0;
 
+            // Spark stores coords as float16.
             gs.center = vec3(r*cos(t), r*sin(t), z);
             gs.rgba = vec4(0.5 + 0.5*vec3(z, 0, -z), 1.0);
             gs.scales = vec3(0.5)/sqrt(float(n));
             gs.quaternion = vec4(0);
 
             gs.scales *= 1.0 + 0.5*cos(
-                PI*4.0*(z*0.5 + 0.5 + time*0.2));
+                PI*3.0*(z*0.5 + 0.5 + time*0.2));
         }
     </script>
 
