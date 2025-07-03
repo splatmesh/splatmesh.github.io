@@ -3,7 +3,7 @@
 <div align=center>
 <a href="https://splatmesh.com">splatmesh.com</a>
 <div>
-Procedurally generated 3DGS powered by <a href="https://sparkjs.dev">Spark</a>
+Procedurally generated gaussian splats powered by <a href="https://sparkjs.dev">Spark</a>
 </div>
 <br>
 </div>
